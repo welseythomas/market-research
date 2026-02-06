@@ -48,12 +48,12 @@ module.exports = async function handler(req, res) {
 
     const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 4096,
+      max_tokens: 3000,
       system: systemPrompt,
       messages: [
         {
           role: 'user',
-          content: `Hier is de klantbriefing. Analyseer deze en genereer de complete offerte als JSON.\n\nGeef ALLEEN het JSON-object terug, geen tekst eromheen.\nWees BEKNOPT in beschrijvingen — korte zinnen, geen herhalingen. Houd de totale JSON compact.\n\n---\n\n${text}`,
+          content: `Analyseer deze klantbriefing en genereer de offerte als JSON.\n\nREGELS:\n- Geef ALLEEN het JSON-object, geen markdown codeblokken of tekst eromheen.\n- Maximaal 1-2 zinnen per beschrijving. Geen herhalingen.\n- Arrays (screeningcriteria, kwaliteitsmaatregelen, etc.) max 4-5 items.\n- Houd de totale output zo compact mogelijk.\n\n---\n\n${text}`,
         },
       ],
     });
