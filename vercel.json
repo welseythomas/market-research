@@ -2,11 +2,11 @@
   "functions": {
     "api/analyze.js": {
       "maxDuration": 60,
-      "includeFiles": ["src/**", "fonts/**", "prompt/**"]
+      "includeFiles": "src/**,fonts/**,prompt/**"
     },
     "api/generate-pdf.js": {
       "maxDuration": 30,
-      "includeFiles": ["src/**", "fonts/**"]
+      "includeFiles": "src/**,fonts/**"
     }
   }
 }
