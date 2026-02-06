@@ -55,7 +55,7 @@ app.post('/api/analyze', async (req, res) => {
   try {
     const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 3000,
+      max_tokens: 3500,
       system: systemPrompt,
       messages: [
         {
@@ -76,13 +76,38 @@ app.post('/api/analyze', async (req, res) => {
       }
     });
 
-    await stream.finalMessage();
+    const finalMsg = await stream.finalMessage();
     sendEvent({ type: 'progress', chunks: chunkCount });
 
-    let jsonStr = fullText;
-    const jsonMatch = fullText.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) jsonStr = jsonMatch[1];
-    jsonStr = jsonStr.trim();
+    // Extract JSON from response
+    let jsonStr = fullText.trim();
+    const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) jsonStr = fenceMatch[1].trim();
+
+    const firstBrace = jsonStr.indexOf('{');
+    const lastBrace = jsonStr.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      jsonStr = jsonStr.slice(firstBrace, lastBrace + 1);
+    }
+
+    // Repair truncated JSON if output hit max_tokens
+    if (finalMsg.stop_reason === 'max_tokens') {
+      let openBraces = 0, openBrackets = 0, inString = false, escaped = false;
+      for (const ch of jsonStr) {
+        if (escaped) { escaped = false; continue; }
+        if (ch === '\\') { escaped = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{') openBraces++;
+        if (ch === '}') openBraces--;
+        if (ch === '[') openBrackets++;
+        if (ch === ']') openBrackets--;
+      }
+      if (inString) jsonStr += '"';
+      jsonStr = jsonStr.replace(/[,:\s]+$/, '');
+      for (let i = 0; i < openBrackets; i++) jsonStr += ']';
+      for (let i = 0; i < openBraces; i++) jsonStr += '}';
+    }
 
     const proposal = JSON.parse(jsonStr);
     sendEvent({ type: 'complete', data: proposal });
