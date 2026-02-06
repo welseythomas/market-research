@@ -48,12 +48,12 @@ module.exports = async function handler(req, res) {
 
     const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 8000,
+      max_tokens: 4096,
       system: systemPrompt,
       messages: [
         {
           role: 'user',
-          content: `Hier is de klantbriefing. Analyseer deze en genereer de complete offerte als JSON.\n\nGeef ALLEEN het JSON-object terug, geen tekst eromheen.\n\n---\n\n${text}`,
+          content: `Hier is de klantbriefing. Analyseer deze en genereer de complete offerte als JSON.\n\nGeef ALLEEN het JSON-object terug, geen tekst eromheen.\nWees BEKNOPT in beschrijvingen — korte zinnen, geen herhalingen. Houd de totale JSON compact.\n\n---\n\n${text}`,
         },
       ],
     });
