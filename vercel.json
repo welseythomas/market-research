@@ -1,24 +1,12 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "src/**",
-          "fonts/**",
-          "prompt/**"
-        ]
-      }
+  "functions": {
+    "api/analyze.js": {
+      "maxDuration": 60,
+      "includeFiles": ["src/**", "fonts/**", "prompt/**"]
     },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
+    "api/generate-pdf.js": {
+      "maxDuration": 30,
+      "includeFiles": ["src/**", "fonts/**"]
     }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)", "dest": "/public/$1" }
-  ]
+  }
 }

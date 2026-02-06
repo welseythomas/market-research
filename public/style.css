@@ -365,6 +365,16 @@ body {
   transition: width 0.8s ease;
 }
 
+.loading-meta {
+  display: flex;
+  justify-content: space-between;
+  max-width: 400px;
+  margin: 10px auto 0;
+  font-size: 13px;
+  color: var(--muted-fg);
+  font-variant-numeric: tabular-nums;
+}
+
 .skeleton-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

@@ -40,8 +40,20 @@ app.post('/api/analyze', async (req, res) => {
     return res.status(400).json({ error: 'Geen briefing tekst ontvangen.' });
   }
 
+  // SSE streaming for real-time progress (same as Vercel function)
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  });
+  res.flushHeaders();
+
+  const sendEvent = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
   try {
-    const message = await anthropic.messages.create({
+    const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-5-20250929',
       max_tokens: 8000,
       system: systemPrompt,
@@ -53,23 +65,36 @@ app.post('/api/analyze', async (req, res) => {
       ],
     });
 
-    const responseText = message.content[0].text;
+    let fullText = '';
+    let chunkCount = 0;
 
-    // Extract JSON from response (handle possible markdown code blocks)
-    let jsonStr = responseText;
-    const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    stream.on('text', (delta) => {
+      fullText += delta;
+      chunkCount++;
+      if (chunkCount % 15 === 0) {
+        sendEvent({ type: 'progress', chunks: chunkCount });
+      }
+    });
+
+    await stream.finalMessage();
+    sendEvent({ type: 'progress', chunks: chunkCount });
+
+    let jsonStr = fullText;
+    const jsonMatch = fullText.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) jsonStr = jsonMatch[1];
     jsonStr = jsonStr.trim();
 
     const proposal = JSON.parse(jsonStr);
-    res.json(proposal);
+    sendEvent({ type: 'complete', data: proposal });
   } catch (err) {
     console.error('Claude API error:', err);
-    if (err instanceof SyntaxError) {
-      return res.status(500).json({ error: 'Claude gaf geen geldig JSON terug. Probeer opnieuw.' });
-    }
-    res.status(500).json({ error: 'API fout: ' + err.message });
+    const errorMsg = err instanceof SyntaxError
+      ? 'Claude gaf geen geldig JSON terug. Probeer opnieuw.'
+      : 'API fout: ' + err.message;
+    sendEvent({ type: 'error', error: errorMsg });
   }
+
+  res.end();
 });
 
 // ─── API: Generate PDF ──────────────────────────────────────────

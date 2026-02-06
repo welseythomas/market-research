@@ -2,28 +2,51 @@ const Anthropic = require('@anthropic-ai/sdk');
 const fs = require('fs');
 const path = require('path');
 
-const anthropic = new Anthropic();
-
-// Load system prompt (skip the header lines before the ---)
-const systemPromptRaw = fs.readFileSync(
-  path.join(process.cwd(), 'prompt', 'system-prompt.md'),
-  'utf-8'
-);
-const systemPrompt = systemPromptRaw.split('---').slice(1).join('---').trim();
+// Load system prompt at module level (cached between invocations)
+let systemPrompt;
+try {
+  const raw = fs.readFileSync(
+    path.join(process.cwd(), 'prompt', 'system-prompt.md'),
+    'utf-8'
+  );
+  systemPrompt = raw.split('---').slice(1).join('---').trim();
+} catch (err) {
+  console.error('Failed to load system prompt:', err.message);
+}
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const text = (req.body.briefing_text || '').trim();
+  if (!systemPrompt) {
+    return res.status(500).json({ error: 'Server configuratie fout: system prompt niet gevonden.' });
+  }
 
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: 'Server configuratie fout: ANTHROPIC_API_KEY niet ingesteld.' });
+  }
+
+  const text = (req.body?.briefing_text || '').trim();
   if (!text) {
     return res.status(400).json({ error: 'Geen briefing tekst ontvangen.' });
   }
 
+  // Use SSE streaming to avoid timeout and show real-time progress
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  });
+
+  const sendEvent = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
   try {
-    const message = await anthropic.messages.create({
+    const anthropic = new Anthropic();
+
+    const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-5-20250929',
       max_tokens: 8000,
       system: systemPrompt,
@@ -35,21 +58,39 @@ module.exports = async function handler(req, res) {
       ],
     });
 
-    const responseText = message.content[0].text;
+    let fullText = '';
+    let chunkCount = 0;
 
-    // Extract JSON from response (handle possible markdown code blocks)
-    let jsonStr = responseText;
-    const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    stream.on('text', (delta) => {
+      fullText += delta;
+      chunkCount++;
+      // Send progress every 15 chunks (~every second)
+      if (chunkCount % 15 === 0) {
+        sendEvent({ type: 'progress', chunks: chunkCount });
+      }
+    });
+
+    await stream.finalMessage();
+
+    // Send final progress
+    sendEvent({ type: 'progress', chunks: chunkCount });
+
+    // Parse JSON from response
+    let jsonStr = fullText;
+    const jsonMatch = fullText.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) jsonStr = jsonMatch[1];
     jsonStr = jsonStr.trim();
 
     const proposal = JSON.parse(jsonStr);
-    res.json(proposal);
+    sendEvent({ type: 'complete', data: proposal });
   } catch (err) {
-    console.error('Claude API error:', err);
-    if (err instanceof SyntaxError) {
-      return res.status(500).json({ error: 'Claude gaf geen geldig JSON terug. Probeer opnieuw.' });
-    }
-    res.status(500).json({ error: 'API fout: ' + err.message });
+    console.error('API error:', err);
+    const errorMsg =
+      err instanceof SyntaxError
+        ? 'Claude gaf geen geldig JSON terug. Probeer opnieuw.'
+        : 'API fout: ' + err.message;
+    sendEvent({ type: 'error', error: errorMsg });
   }
+
+  res.end();
 };

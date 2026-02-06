@@ -65,6 +65,10 @@ Bijvoorbeeld een telefoontranscript, e-mail van een klant, gespreksnotities of e
         <div class="progress-track">
           <div class="progress-fill" id="progress-fill"></div>
         </div>
+        <div class="loading-meta">
+          <span id="loading-pct">0%</span>
+          <span id="loading-timer">0s</span>
+        </div>
       </div>
 
       <div class="skeleton-grid">
@@ -101,7 +105,7 @@ Bijvoorbeeld een telefoontranscript, e-mail van een klant, gespreksnotities of e
         </div>
         <div class="assumptions-actions">
           <button class="btn btn-secondary" id="btn-confirm-all">Alles akkoord</button>
-          <button class="btn btn-primary" id="btn-view-proposal" disabled>
+          <button class="btn btn-primary" id="btn-view-proposal">
             Offerte bekijken
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>

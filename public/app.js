@@ -3,7 +3,6 @@
 
   let proposalData = null;
   let assumptionStates = []; // track confirmed/edited per assumption
-  let loadingInterval = null;
 
   // ─── Elements ──────────────────────────────────────────────
   const screens = {
@@ -65,34 +64,61 @@
     errorMsg.style.display = 'none';
   });
 
-  // ─── Loading Progress Animation ────────────────────────────
-  const loadingMessages = [
-    'Briefing wordt gelezen...',
-    'Doelgroep analyseren...',
-    'Steekproef bepalen...',
-    'Kosten berekenen...',
-    'Offerte samenstellen...',
+  // ─── Loading Progress (real-time from SSE stream) ──────────
+  let loadingTimerInterval = null;
+  let loadingStartTime = 0;
+
+  const loadingStages = [
+    { minChunks: 0,    text: 'Briefing analyseren...',             pct: 5 },
+    { minChunks: 50,   text: 'Doelgroep en screening bepalen...',  pct: 15 },
+    { minChunks: 150,  text: 'Steekproef en methodologie...',      pct: 30 },
+    { minChunks: 350,  text: 'Planning en kosten berekenen...',    pct: 55 },
+    { minChunks: 600,  text: 'Offerte samenstellen...',            pct: 75 },
+    { minChunks: 900,  text: 'Bijna klaar...',                     pct: 90 },
   ];
 
   function startLoadingAnimation() {
-    const statusEl = document.getElementById('loading-status');
     const progressEl = document.getElementById('progress-fill');
-    let step = 0;
-    progressEl.style.width = '5%';
+    const pctEl = document.getElementById('loading-pct');
+    const timerEl = document.getElementById('loading-timer');
+    const statusEl = document.getElementById('loading-status');
 
-    loadingInterval = setInterval(() => {
-      step++;
-      if (step < loadingMessages.length) {
-        statusEl.textContent = loadingMessages[step];
-        progressEl.style.width = `${Math.min(15 + step * 18, 85)}%`;
+    progressEl.style.width = '5%';
+    pctEl.textContent = '0%';
+    statusEl.textContent = 'Briefing analyseren...';
+    loadingStartTime = Date.now();
+
+    loadingTimerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - loadingStartTime) / 1000);
+      timerEl.textContent = `${elapsed}s`;
+    }, 1000);
+  }
+
+  function updateLoadingProgress(chunks) {
+    const progressEl = document.getElementById('progress-fill');
+    const pctEl = document.getElementById('loading-pct');
+    const statusEl = document.getElementById('loading-status');
+
+    // Find the highest matching stage
+    let stage = loadingStages[0];
+    for (let i = loadingStages.length - 1; i >= 0; i--) {
+      if (chunks >= loadingStages[i].minChunks) {
+        stage = loadingStages[i];
+        break;
       }
-    }, 2500);
+    }
+
+    progressEl.style.width = `${stage.pct}%`;
+    pctEl.textContent = `${stage.pct}%`;
+    statusEl.textContent = stage.text;
   }
 
   function stopLoadingAnimation() {
-    if (loadingInterval) clearInterval(loadingInterval);
+    if (loadingTimerInterval) clearInterval(loadingTimerInterval);
     const progressEl = document.getElementById('progress-fill');
+    const pctEl = document.getElementById('loading-pct');
     progressEl.style.width = '100%';
+    pctEl.textContent = '100%';
   }
 
   // ─── Analyze Briefing ──────────────────────────────────────
@@ -116,14 +142,62 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ briefing_text: text }),
+        signal: AbortSignal.timeout(90000),
       });
 
+      // Handle non-200 error responses (validation errors return JSON)
       if (!resp.ok) {
-        const err = await resp.json();
-        throw new Error(err.error || 'Onbekende fout');
+        let errorText;
+        try {
+          const errData = await resp.json();
+          errorText = errData.error || 'Onbekende fout';
+        } catch {
+          errorText = `Server fout (${resp.status})`;
+        }
+        throw new Error(errorText);
       }
 
-      proposalData = await resp.json();
+      const contentType = resp.headers.get('content-type') || '';
+
+      if (contentType.includes('text/event-stream')) {
+        // ── SSE Stream: read real-time progress ──
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let gotComplete = false;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split('\n\n');
+          buffer = parts.pop();
+
+          for (const part of parts) {
+            const line = part.trim();
+            if (!line.startsWith('data: ')) continue;
+            const event = JSON.parse(line.slice(6));
+
+            if (event.type === 'progress') {
+              updateLoadingProgress(event.chunks);
+            } else if (event.type === 'complete') {
+              proposalData = event.data;
+              gotComplete = true;
+            } else if (event.type === 'error') {
+              throw new Error(event.error);
+            }
+          }
+        }
+
+        if (!gotComplete) {
+          throw new Error('Verbinding verbroken. Probeer opnieuw.');
+        }
+      } else {
+        // ── Fallback: regular JSON response ──
+        proposalData = await resp.json();
+      }
+
       stopLoadingAnimation();
 
       // Route: assumptions or directly to review
@@ -244,11 +318,9 @@
     const confirmed = assumptionStates.filter(s => s.confirmed).length;
     const fill = document.getElementById('assumptions-fill');
     const text = document.getElementById('assumptions-progress-text');
-    const btnView = document.getElementById('btn-view-proposal');
 
     fill.style.width = `${(confirmed / total) * 100}%`;
     text.textContent = `${confirmed} van ${total}`;
-    btnView.disabled = confirmed < total;
   }
 
   // Confirm all
