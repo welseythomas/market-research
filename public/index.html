@@ -4,30 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Proposal Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ─── STEP 1: Briefing Input ──────────────────────────────── -->
+  <!-- Theme toggle -->
+  <button class="theme-toggle" id="theme-toggle" aria-label="Thema wisselen">
+    <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ═══ STEP 1: Input ═══════════════════════════════════════ -->
   <div id="step-input" class="screen active">
     <div class="input-container">
       <div class="logo">
-        <div class="logo-mark"></div>
-        <h1>Proposal Generator</h1>
-        <p class="tagline">Plak een briefing, krijg een offerte</p>
+        <div class="logo-icon">P</div>
+        <div>
+          <h1>Proposal Generator</h1>
+          <p class="tagline">Plak een briefing, krijg een offerte</p>
+        </div>
       </div>
 
-      <label class="textarea-label" for="briefing-text">Plak hieronder het transcript, de e-mail of gespreksnotities</label>
-      <textarea id="briefing-text" class="briefing-textarea" rows="16" placeholder="Plak hier de volledige briefing tekst...
+      <div class="textarea-wrapper">
+        <label for="briefing-text">Plak hieronder het transcript, de e-mail of gespreksnotities</label>
+        <textarea id="briefing-text" rows="14" placeholder="Plak hier de volledige briefing tekst...
 
-Bijvoorbeeld een telefoontranscript, e-mail van een klant, gespreksnotities, of een RFP. De AI analyseert de tekst en maakt automatisch een complete offerte."></textarea>
-
-      <div class="char-count" id="char-count">0 tekens</div>
+Bijvoorbeeld een telefoontranscript, e-mail van een klant, gespreksnotities of een RFP. De AI analyseert de tekst en maakt automatisch een complete offerte."></textarea>
+        <span class="char-badge" id="char-count">0</span>
+      </div>
 
       <button class="btn btn-primary btn-large" id="btn-analyze" disabled>
         <span class="btn-text">Offerte genereren</span>
         <span class="btn-loading" style="display:none">
-          <span class="spinner"></span> Briefing wordt geanalyseerd...
+          <span class="spinner"></span>
+          <span>Bezig...</span>
         </span>
       </button>
 
@@ -35,32 +51,88 @@ Bijvoorbeeld een telefoontranscript, e-mail van een klant, gespreksnotities, of 
     </div>
   </div>
 
-  <!-- ─── STEP 2: Review Proposal ─────────────────────────────── -->
+  <!-- ═══ STEP 2: Loading ═════════════════════════════════════ -->
+  <div id="step-loading" class="screen">
+    <div class="loading-container">
+      <div class="loading-header">
+        <h2>Offerte wordt opgesteld</h2>
+        <div class="loading-steps">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span id="loading-status">Briefing wordt gelezen...</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="skeleton-grid">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+      <div class="skeleton-section"></div>
+      <div class="skeleton-section"></div>
+      <div class="skeleton-section"></div>
+      <div class="skeleton-section"></div>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 3: Assumptions ═════════════════════════════════ -->
+  <div id="step-assumptions" class="screen">
+    <div class="assumptions-container">
+      <div class="assumptions-header">
+        <div class="assumptions-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span id="assumptions-count">0</span> aannames
+        </div>
+        <h2>Aannames controleren</h2>
+        <p>Niet alle informatie stond in de briefing. Bevestig de aannames of pas ze aan.</p>
+      </div>
+
+      <div class="assumptions-grid" id="assumptions-grid"></div>
+
+      <div class="assumptions-footer">
+        <div class="assumptions-progress">
+          <div class="mini-bar"><div class="mini-fill" id="assumptions-fill"></div></div>
+          <span id="assumptions-progress-text">0 van 0</span>
+        </div>
+        <div class="assumptions-actions">
+          <button class="btn btn-secondary" id="btn-confirm-all">Alles akkoord</button>
+          <button class="btn btn-primary" id="btn-view-proposal" disabled>
+            Offerte bekijken
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 4: Review ══════════════════════════════════════ -->
   <div id="step-review" class="screen">
     <header class="review-header">
       <div class="review-header-left">
-        <button class="btn btn-ghost" id="btn-back">&larr; Nieuwe briefing</button>
+        <button class="btn btn-ghost" id="btn-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Terug
+        </button>
         <h2>Offerte review</h2>
       </div>
       <div class="review-header-right">
-        <button class="btn btn-secondary" id="btn-download-json">JSON exporteren</button>
+        <button class="btn btn-secondary" id="btn-download-json">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          JSON
+        </button>
         <button class="btn btn-primary" id="btn-download-pdf">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           PDF downloaden
         </button>
       </div>
     </header>
 
     <div class="review-body">
-      <div class="aannames-banner" id="aannames-banner" style="display:none">
-        <div class="banner-icon">!</div>
-        <div class="banner-content">
-          <strong>Aannames gemaakt</strong>
-          <p id="aannames-text"></p>
-          <ul id="aannames-list"></ul>
-        </div>
-      </div>
-
       <div class="facts-grid" id="facts-grid"></div>
       <div class="sections" id="review-sections"></div>
     </div>

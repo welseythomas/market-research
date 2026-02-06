@@ -2,36 +2,100 @@
   'use strict';
 
   let proposalData = null;
+  let assumptionStates = []; // track confirmed/edited per assumption
+  let loadingInterval = null;
 
-  // ─── Elements ────────────────────────────────────────────────
-
-  const screenInput = document.getElementById('step-input');
-  const screenReview = document.getElementById('step-review');
+  // ─── Elements ──────────────────────────────────────────────
+  const screens = {
+    input: document.getElementById('step-input'),
+    loading: document.getElementById('step-loading'),
+    assumptions: document.getElementById('step-assumptions'),
+    review: document.getElementById('step-review'),
+  };
   const briefingText = document.getElementById('briefing-text');
   const charCount = document.getElementById('char-count');
   const btnAnalyze = document.getElementById('btn-analyze');
   const errorMsg = document.getElementById('error-msg');
 
-  // ─── Screen switching ────────────────────────────────────────
-
-  function showScreen(screen) {
-    screenInput.classList.remove('active');
-    screenReview.classList.remove('active');
-    screen.classList.add('active');
-    window.scrollTo({ top: 0 });
+  // ─── Screen Management ─────────────────────────────────────
+  function showScreen(name) {
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+    screens[name].scrollTo({ top: 0 });
   }
 
-  // ─── Input logic ─────────────────────────────────────────────
+  // ─── Theme Toggle ──────────────────────────────────────────
+  (function initTheme() {
+    const toggle = document.getElementById('theme-toggle');
+    const sunIcon = document.getElementById('icon-sun');
+    const moonIcon = document.getElementById('icon-moon');
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+      sunIcon.style.display = 'none';
+      moonIcon.style.display = 'block';
+    }
+    toggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      sunIcon.style.display = isDark ? 'none' : 'block';
+      moonIcon.style.display = isDark ? 'block' : 'none';
+    });
+  })();
 
+  // ─── Toast Notifications ───────────────────────────────────
+  function toast(message, type = 'info', duration = 3500) {
+    const container = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.textContent = message;
+    container.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+    setTimeout(() => {
+      el.classList.remove('show');
+      setTimeout(() => el.remove(), 400);
+    }, duration);
+  }
+
+  // ─── Input Logic ───────────────────────────────────────────
   briefingText.addEventListener('input', () => {
     const len = briefingText.value.trim().length;
-    charCount.textContent = `${len} tekens`;
+    charCount.textContent = len;
     btnAnalyze.disabled = len < 20;
     errorMsg.style.display = 'none';
   });
 
-  // ─── Analyze briefing ────────────────────────────────────────
+  // ─── Loading Progress Animation ────────────────────────────
+  const loadingMessages = [
+    'Briefing wordt gelezen...',
+    'Doelgroep analyseren...',
+    'Steekproef bepalen...',
+    'Kosten berekenen...',
+    'Offerte samenstellen...',
+  ];
 
+  function startLoadingAnimation() {
+    const statusEl = document.getElementById('loading-status');
+    const progressEl = document.getElementById('progress-fill');
+    let step = 0;
+    progressEl.style.width = '5%';
+
+    loadingInterval = setInterval(() => {
+      step++;
+      if (step < loadingMessages.length) {
+        statusEl.textContent = loadingMessages[step];
+        progressEl.style.width = `${Math.min(15 + step * 18, 85)}%`;
+      }
+    }, 2500);
+  }
+
+  function stopLoadingAnimation() {
+    if (loadingInterval) clearInterval(loadingInterval);
+    const progressEl = document.getElementById('progress-fill');
+    progressEl.style.width = '100%';
+  }
+
+  // ─── Analyze Briefing ──────────────────────────────────────
   btnAnalyze.addEventListener('click', async () => {
     const text = briefingText.value.trim();
     if (text.length < 20) return;
@@ -42,6 +106,10 @@
     btnLoading.style.display = 'inline-flex';
     btnAnalyze.disabled = true;
     errorMsg.style.display = 'none';
+
+    // Show loading screen immediately
+    setTimeout(() => showScreen('loading'), 300);
+    startLoadingAnimation();
 
     try {
       const resp = await fetch('/api/analyze', {
@@ -56,26 +124,187 @@
       }
 
       proposalData = await resp.json();
-      renderReview(proposalData);
-      showScreen(screenReview);
+      stopLoadingAnimation();
+
+      // Route: assumptions or directly to review
+      if (proposalData.aannames && proposalData.aannames.length > 0) {
+        setTimeout(() => {
+          renderAssumptions(proposalData.aannames);
+          showScreen('assumptions');
+        }, 500);
+      } else {
+        setTimeout(() => {
+          renderReview(proposalData);
+          showScreen('review');
+          toast('Offerte succesvol gegenereerd', 'success');
+        }, 500);
+      }
     } catch (err) {
+      stopLoadingAnimation();
+      showScreen('input');
       errorMsg.textContent = err.message;
       errorMsg.style.display = 'block';
+      toast('Er ging iets mis', 'error');
     } finally {
-      btnText.style.display = 'inline';
+      btnText.style.display = 'inline-flex';
       btnLoading.style.display = 'none';
       btnAnalyze.disabled = false;
     }
   });
 
-  // ─── Back button ─────────────────────────────────────────────
+  // ─── Assumption Cards ──────────────────────────────────────
+  function parseAssumption(text) {
+    const colonIdx = text.indexOf(':');
+    if (colonIdx > 0 && colonIdx < 35) {
+      return {
+        category: text.substring(0, colonIdx).trim(),
+        description: text.substring(colonIdx + 1).trim(),
+      };
+    }
+    return { category: 'Aanname', description: text };
+  }
 
-  document.getElementById('btn-back').addEventListener('click', () => {
-    showScreen(screenInput);
+  function renderAssumptions(aannames) {
+    const grid = document.getElementById('assumptions-grid');
+    grid.innerHTML = '';
+    assumptionStates = aannames.map(() => ({ confirmed: false, edited: false, editText: '' }));
+
+    document.getElementById('assumptions-count').textContent = aannames.length;
+
+    aannames.forEach((text, i) => {
+      const parsed = parseAssumption(text);
+      const card = document.createElement('div');
+      card.className = 'assumption-card';
+      card.dataset.index = i;
+      card.innerHTML = `
+        <div class="card-top">
+          <div style="flex:1">
+            <div class="card-category">${esc(parsed.category)}</div>
+            <div class="card-text">${esc(parsed.description)}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn-edit" data-action="edit">Aanpassen</button>
+            <button class="btn-confirm" data-action="confirm">
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Akkoord
+            </button>
+          </div>
+        </div>
+        <div class="card-edit">
+          <textarea rows="2">${esc(parsed.description)}</textarea>
+          <div class="card-edit-actions">
+            <button class="btn-edit" data-action="cancel-edit">Annuleren</button>
+            <button class="btn-confirm" data-action="save-edit">
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Opslaan
+            </button>
+          </div>
+        </div>`;
+
+      // Staggered entrance
+      setTimeout(() => card.classList.add('visible'), 80 * i);
+
+      // Event delegation for card buttons
+      card.addEventListener('click', (e) => {
+        const action = e.target.closest('[data-action]')?.dataset.action;
+        if (!action) return;
+
+        if (action === 'confirm') {
+          assumptionStates[i].confirmed = !assumptionStates[i].confirmed;
+          card.classList.toggle('confirmed', assumptionStates[i].confirmed);
+          updateAssumptionProgress();
+        } else if (action === 'edit') {
+          card.classList.add('editing');
+        } else if (action === 'cancel-edit') {
+          card.classList.remove('editing');
+        } else if (action === 'save-edit') {
+          const newText = card.querySelector('.card-edit textarea').value.trim();
+          if (newText) {
+            assumptionStates[i].edited = true;
+            assumptionStates[i].editText = newText;
+            assumptionStates[i].confirmed = true;
+            card.querySelector('.card-text').textContent = newText;
+            card.classList.remove('editing');
+            card.classList.add('confirmed');
+            // Update the proposal data
+            proposalData.aannames[i] = parseAssumption(proposalData.aannames[i]).category + ': ' + newText;
+            updateAssumptionProgress();
+          }
+        }
+      });
+
+      grid.appendChild(card);
+    });
+
+    updateAssumptionProgress();
+  }
+
+  function updateAssumptionProgress() {
+    const total = assumptionStates.length;
+    const confirmed = assumptionStates.filter(s => s.confirmed).length;
+    const fill = document.getElementById('assumptions-fill');
+    const text = document.getElementById('assumptions-progress-text');
+    const btnView = document.getElementById('btn-view-proposal');
+
+    fill.style.width = `${(confirmed / total) * 100}%`;
+    text.textContent = `${confirmed} van ${total}`;
+    btnView.disabled = confirmed < total;
+  }
+
+  // Confirm all
+  document.getElementById('btn-confirm-all').addEventListener('click', () => {
+    assumptionStates.forEach((s, i) => {
+      s.confirmed = true;
+      const card = document.querySelector(`.assumption-card[data-index="${i}"]`);
+      if (card) card.classList.add('confirmed');
+    });
+    updateAssumptionProgress();
   });
 
-  // ─── Render Review ───────────────────────────────────────────
+  // View proposal
+  document.getElementById('btn-view-proposal').addEventListener('click', () => {
+    renderReview(proposalData);
+    showScreen('review');
+    toast('Offerte succesvol gegenereerd', 'success');
+  });
 
+  // ─── Back button ───────────────────────────────────────────
+  document.getElementById('btn-back').addEventListener('click', () => {
+    showScreen('input');
+  });
+
+  // ─── Number Ticker ─────────────────────────────────────────
+  function animateNumber(el, target, prefix = '', suffix = '') {
+    if (typeof target !== 'number' || isNaN(target)) {
+      el.textContent = prefix + (target || '—') + suffix;
+      return;
+    }
+    const duration = 1200;
+    const start = performance.now();
+    const isDecimal = target % 1 !== 0;
+
+    function update(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = target * eased;
+
+      if (isDecimal) {
+        el.textContent = prefix + fmtEur(current) + suffix;
+      } else {
+        el.textContent = prefix + Math.floor(current).toLocaleString('nl-NL') + suffix;
+      }
+
+      if (progress < 1) requestAnimationFrame(update);
+      else {
+        if (isDecimal) el.textContent = prefix + fmtEur(target) + suffix;
+        else el.textContent = prefix + target.toLocaleString('nl-NL') + suffix;
+      }
+    }
+    requestAnimationFrame(update);
+  }
+
+  // ─── Render Review ─────────────────────────────────────────
   function renderReview(data) {
     const m = data.meta || {};
     const dg = data.doelgroep || {};
@@ -84,29 +313,34 @@
     const pl = data.planning || {};
     const ko = data.kosten || {};
 
-    // Aannames banner
-    const banner = document.getElementById('aannames-banner');
-    const aanList = document.getElementById('aannames-list');
-    if (data.aannames && data.aannames.length) {
-      banner.style.display = 'flex';
-      document.getElementById('aannames-text').textContent =
-        `Er zijn ${data.aannames.length} aanname(s) gemaakt bij ontbrekende informatie:`;
-      aanList.innerHTML = data.aannames.map(a => `<li>${esc(a)}</li>`).join('');
-    } else {
-      banner.style.display = 'none';
-    }
-
     // Key facts grid
     const grid = document.getElementById('facts-grid');
     grid.innerHTML = `
       ${factCard('Opdrachtgever', m.opdrachtgever, 'meta.opdrachtgever')}
       ${factCard('Projectnaam', m.projectnaam, 'meta.projectnaam')}
-      ${factCard('Completes', sp.totaal_completes, 'steekproef.totaal_completes')}
+      ${factCard('Completes', sp.totaal_completes, 'steekproef.totaal_completes', false, true)}
       ${factCard('Landen', (sp.landen || []).length + ' landen')}
       ${factCard('Incidence Rate', dg.geschatte_incidence_rate)}
       ${factCard('LOI', (me.loi_minuten || '?') + ' min')}
       ${factCard('Doorlooptijd', (pl.totale_doorlooptijd_werkdagen || '?') + ' werkdagen')}
-      ${factCard('Totaal excl. BTW', fmtEur(ko.totaal_excl_btw || 0), null, true)}`;
+      ${factCard('Totaal excl. BTW', ko.totaal_excl_btw || 0, null, true, true)}`;
+
+    // Staggered card entrance + number animation
+    grid.querySelectorAll('.fact-card').forEach((card, i) => {
+      setTimeout(() => {
+        card.classList.add('visible');
+        // Animate numbers
+        const valEl = card.querySelector('.fact-value:not(input), .ticker');
+        if (valEl && valEl.dataset.tick) {
+          const num = parseFloat(valEl.dataset.tick);
+          if (!isNaN(num)) {
+            const isEur = valEl.dataset.ticktype === 'eur';
+            if (isEur) animateNumber(valEl, num);
+            else animateNumber(valEl, num);
+          }
+        }
+      }, 60 * i);
+    });
 
     // Wire up editable facts
     grid.querySelectorAll('.fact-card.editable input').forEach(input => {
@@ -126,12 +360,12 @@
       <p>${esc(dg.omschrijving || '')}</p>
       ${dg.screeningcriteria?.length ? '<div class="section-label">Screeningcriteria</div><ul>' + dg.screeningcriteria.map(c => `<li>${esc(c)}</li>`).join('') + '</ul>' : ''}
       <div class="section-label">Incidence Rate: ${esc(dg.geschatte_incidence_rate || '?')}</div>
-      <p style="font-size:12px;color:#6b7280;font-style:italic">${esc(dg.ir_toelichting || '')}</p>`);
+      <p style="font-size:12px;font-style:italic;opacity:0.7">${esc(dg.ir_toelichting || '')}</p>`);
 
     addSection(sections, 3, 'Steekproefopzet', `
       ${buildMiniTable(['Land', 'Completes', 'Taal'], (sp.landen || []).map(l => [l.land, l.completes, l.taal]))}
       ${sp.quotas?.length ? '<div class="section-label">Quotas</div>' + buildMiniTable(['Variabele', 'Verdeling'], sp.quotas.map(q => [q.variabele, q.verdeling])) : ''}
-      ${sp.opmerkingen ? `<p style="font-size:12px;color:#6b7280;font-style:italic;margin-top:8px">${esc(sp.opmerkingen)}</p>` : ''}`);
+      ${sp.opmerkingen ? `<p style="font-size:12px;font-style:italic;opacity:0.7;margin-top:8px">${esc(sp.opmerkingen)}</p>` : ''}`);
 
     addSection(sections, 4, 'Methodologie', `
       <p><strong>${esc(me.onderzoekstype || '')}</strong> &mdash; LOI ${me.loi_minuten || '?'} minuten</p>
@@ -167,6 +401,11 @@
       ${data.voorwaarden?.length ? '<div class="section-label">Voorwaarden</div><ul>' + data.voorwaarden.map(v => `<li>${esc(v)}</li>`).join('') + '</ul>' : ''}
       ${data.disclaimers?.length ? '<div class="section-label">Disclaimers</div><ul>' + data.disclaimers.map(d => `<li>${esc(d)}</li>`).join('') + '</ul>' : ''}`);
 
+    // Stagger section entrance
+    sections.querySelectorAll('.section-card').forEach((card, i) => {
+      setTimeout(() => card.classList.add('visible'), 300 + 60 * i);
+    });
+
     // Wire up textarea edits
     sections.querySelectorAll('textarea[data-path]').forEach(ta => {
       ta.addEventListener('change', () => {
@@ -175,7 +414,8 @@
     });
   }
 
-  // ─── Section builder ─────────────────────────────────────────
+  // ─── Section Builder ───────────────────────────────────────
+  const chevronSvg = '<svg class="section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
   function addSection(container, num, title, bodyHtml, openByDefault) {
     const card = document.createElement('div');
@@ -183,35 +423,40 @@
     card.innerHTML = `
       <div class="section-header">
         <h3><span class="section-num">${num}</span> ${esc(title)}</h3>
-        <span class="section-chevron">&#9662;</span>
+        ${chevronSvg}
       </div>
-      <div class="section-body">${bodyHtml}</div>`;
+      <div class="section-body"><div class="section-body-inner">${bodyHtml}</div></div>`;
     card.querySelector('.section-header').addEventListener('click', () => {
       card.classList.toggle('open');
     });
     container.appendChild(card);
   }
 
-  // ─── Fact card ───────────────────────────────────────────────
-
-  function factCard(label, value, editPath, isAccent) {
+  // ─── Fact Card ─────────────────────────────────────────────
+  function factCard(label, value, editPath, isAccent, isTicker) {
+    const displayVal = String(value ?? '—');
     if (editPath) {
       return `<div class="fact-card editable">
         <div class="fact-label">${esc(label)}</div>
-        <input class="fact-value${isAccent ? ' accent' : ''}" data-path="${editPath}" value="${esc(String(value || ''))}">
+        <input class="fact-value${isAccent ? ' accent' : ''}" data-path="${editPath}" value="${esc(displayVal)}">
+      </div>`;
+    }
+    if (isTicker && typeof value === 'number') {
+      const tickType = isAccent ? 'eur' : 'num';
+      return `<div class="fact-card">
+        <div class="fact-label">${esc(label)}</div>
+        <div class="fact-value ticker${isAccent ? ' accent' : ''}" data-tick="${value}" data-ticktype="${tickType}">0</div>
       </div>`;
     }
     return `<div class="fact-card">
       <div class="fact-label">${esc(label)}</div>
-      <div class="fact-value${isAccent ? ' accent' : ''}">${esc(String(value || '—'))}</div>
+      <div class="fact-value${isAccent ? ' accent' : ''}">${esc(displayVal)}</div>
     </div>`;
   }
 
-  // ─── Kosten HTML ─────────────────────────────────────────────
-
+  // ─── Kosten HTML ───────────────────────────────────────────
   function buildKostenHtml(ko) {
     let html = '';
-
     if (ko.eenmalige_kosten?.length) {
       html += '<div class="section-label">Eenmalige kosten</div>';
       html += buildMiniTable(
@@ -220,7 +465,6 @@
         [null, null, 'amount']
       );
     }
-
     if (ko.variabele_kosten?.length) {
       html += '<div class="section-label" style="margin-top:16px">Variabele kosten</div>';
       html += buildMiniTable(
@@ -229,7 +473,6 @@
         [null, 'amount', 'amount', 'amount', 'amount']
       );
     }
-
     html += `
       <table class="mini-table" style="margin-top:16px">
         <tr class="total-row"><td>Subtotaal eenmalig</td><td class="amount">${fmtEur(ko.subtotaal_eenmalig || 0)}</td></tr>
@@ -238,16 +481,13 @@
         <tr><td>BTW (${ko.btw_percentage || 21}%)</td><td class="amount">${fmtEur(ko.btw_bedrag || 0)}</td></tr>
         <tr class="grand-row"><td>Totaal incl. BTW</td><td class="amount">${fmtEur(ko.totaal_incl_btw || 0)}</td></tr>
       </table>`;
-
     if (ko.btw_opmerking) {
-      html += `<p style="font-size:11px;color:#6b7280;font-style:italic;margin-top:8px">${esc(ko.btw_opmerking)}</p>`;
+      html += `<p style="font-size:11px;font-style:italic;opacity:0.6;margin-top:8px">${esc(ko.btw_opmerking)}</p>`;
     }
-
     return html;
   }
 
-  // ─── Mini table builder ──────────────────────────────────────
-
+  // ─── Mini Table ────────────────────────────────────────────
   function buildMiniTable(headers, rows, cellClasses) {
     let html = '<table class="mini-table"><thead><tr>';
     headers.forEach(h => { html += `<th>${esc(h)}</th>`; });
@@ -264,8 +504,7 @@
     return html;
   }
 
-  // ─── PDF Download ────────────────────────────────────────────
-
+  // ─── PDF Download ──────────────────────────────────────────
   document.getElementById('btn-download-pdf').addEventListener('click', async () => {
     if (!proposalData) return;
     const btn = document.getElementById('btn-download-pdf');
@@ -279,7 +518,6 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(proposalData),
       });
-
       if (!resp.ok) throw new Error('PDF generatie mislukt');
 
       const blob = await resp.blob();
@@ -292,16 +530,16 @@
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      toast('PDF gedownload', 'success');
     } catch (err) {
-      alert('Fout: ' + err.message);
+      toast('Fout: ' + err.message, 'error');
     } finally {
       btn.innerHTML = origHtml;
       btn.disabled = false;
     }
   });
 
-  // ─── JSON Export ─────────────────────────────────────────────
-
+  // ─── JSON Export ───────────────────────────────────────────
   document.getElementById('btn-download-json').addEventListener('click', () => {
     if (!proposalData) return;
     const blob = new Blob([JSON.stringify(proposalData, null, 2)], { type: 'application/json' });
@@ -314,10 +552,10 @@
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+    toast('JSON gedownload', 'success');
   });
 
-  // ─── Helpers ─────────────────────────────────────────────────
-
+  // ─── Helpers ───────────────────────────────────────────────
   function esc(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
