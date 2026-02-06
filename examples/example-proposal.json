@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "bureau_naam": "RecruitPanel Europe",
+    "bureau_tagline": "Intelligent Respondent Recruitment",
+    "offerte_nummer": "OFF-2026-0042",
+    "offerte_datum": "2026-02-06",
+    "geldig_tot": "2026-03-08",
+    "opdrachtgever": "Kantar Netherlands B.V.",
+    "contactpersoon": "Marieke de Vries",
+    "projectnaam": "European Sustainable Packaging — B2B Decision Maker Study"
+  },
+  "management_summary": "Wij bieden u graag aan de respondentwerving te verzorgen voor uw onderzoek naar besluitvorming rondom duurzame verpakkingen binnen de Europese FMCG-sector. Het betreft een kwantitatief online onderzoek onder 600 B2B-beslissers verdeeld over vier Europese markten. Via onze AI-gestuurde wervingsmethodiek en uitgebreide zakelijke respondentendatabase verwachten wij binnen 18 werkdagen na akkoord alle gekwalificeerde respondenten op te kunnen leveren.",
+  "doelgroep": {
+    "omschrijving": "De doelgroep bestaat uit senior beslissers binnen FMCG-bedrijven die direct betrokken zijn bij beslissingen rondom verpakkingen en/of supply chain management. Het gaat specifiek om professionals op management- of directieniveau die werken bij bedrijven met minimaal 50 medewerkers in de categorieën food, beverage, personal care of household care.",
+    "screeningcriteria": [
+      "Werkzaam bij een FMCG-bedrijf (food, beverage, personal care, household care)",
+      "Bedrijfsgrootte: minimaal 50 medewerkers",
+      "Functieniveau: manager, director of C-level",
+      "Betrokken bij beslissingen rondom verpakkingen en/of supply chain",
+      "Minimaal 2 jaar ervaring in huidige functie",
+      "Niet werkzaam bij een marktonderzoeksbureau, PR-bureau of verpakkingsleverancier"
+    ],
+    "geschatte_incidence_rate": "8%",
+    "ir_toelichting": "De combinatie van specifieke branche (FMCG), functieniveau (management+), betrokkenheid bij verpakkingsbeslissingen en minimale bedrijfsgrootte resulteert in een lage incidence rate. De FMCG-branche is goed vertegenwoordigd in onze database, maar de specifieke functievereisten beperken de kwalificatie aanzienlijk."
+  },
+  "steekproef": {
+    "totaal_completes": 600,
+    "landen": [
+      {
+        "land": "Nederland",
+        "completes": 150,
+        "taal": "Nederlands"
+      },
+      {
+        "land": "Duitsland",
+        "completes": 200,
+        "taal": "Duits"
+      },
+      {
+        "land": "Frankrijk",
+        "completes": 150,
+        "taal": "Frans"
+      },
+      {
+        "land": "Verenigd Koninkrijk",
+        "completes": 100,
+        "taal": "Engels"
+      }
+    ],
+    "quotas": [
+      {
+        "variabele": "Bedrijfsgrootte",
+        "verdeling": "50% middelgroot (50-249 fte) / 50% groot (250+ fte)"
+      },
+      {
+        "variabele": "Functieniveau",
+        "verdeling": "60% manager / 30% director / 10% C-level"
+      },
+      {
+        "variabele": "FMCG-categorie",
+        "verdeling": "Minimaal 20% per categorie (food, beverage, personal care, household care)"
+      }
+    ],
+    "opmerkingen": "De quota's gelden per land. Bij het Verenigd Koninkrijk verwachten wij een iets langere doorlooptijd vanwege de kleinere marktomvang in onze database voor UK B2B."
+  },
+  "methodologie": {
+    "onderzoekstype": "Kwantitatief online onderzoek (CAWI)",
+    "loi_minuten": 20,
+    "wervingsaanpak": "Wij zetten onze AI-gestuurde chatbot in via LinkedIn, e-mail en onze zakelijke respondentendatabase om in aanmerking komende professionals te identificeren en te kwalificeren. De chatbot voert een geautomatiseerd screeninggesprek om te verifiëren of potentiële respondenten aan alle criteria voldoen. Gekwalificeerde respondenten ontvangen vervolgens een gepersonaliseerde uitnodiging met een unieke surveylink. Voor de B2B-doelgroep combineren wij database-matching met gerichte LinkedIn-campagnes per markt.",
+    "kwaliteitsmaatregelen": [
+      "Dubbele opt-in verificatie van zakelijk e-mailadres",
+      "Geautomatiseerde screening via AI-chatbot met anti-fraude detectie",
+      "Controle op professionele LinkedIn-profielen ter verificatie van functie en werkgever",
+      "Real-time monitoring van invulsnelheid en antwoordpatronen",
+      "Deduplicatie op basis van e-mail, IP-adres en device fingerprint",
+      "Handmatige kwaliteitscontrole op open antwoorden door moedertaalsprekers"
+    ]
+  },
+  "planning": {
+    "totale_doorlooptijd_werkdagen": 18,
+    "fases": [
+      {
+        "fase": "Projectopstart & screening setup",
+        "duur": "3 werkdagen",
+        "omschrijving": "Onboarding, screeningvragenlijst programmeren, wervingskanalen configureren per land, testrun uitvoeren"
+      },
+      {
+        "fase": "Veldwerk — Wave 1 (NL + DE)",
+        "duur": "6 werkdagen",
+        "omschrijving": "Start werving in Nederland en Duitsland, dagelijkse voortgangsrapportage, tussentijdse kwaliteitscontrole"
+      },
+      {
+        "fase": "Veldwerk — Wave 2 (FR + UK)",
+        "duur": "6 werkdagen",
+        "omschrijving": "Start werving in Frankrijk en Verenigd Koninkrijk, parallel afronding Wave 1"
+      },
+      {
+        "fase": "Kwaliteitscontrole & oplevering",
+        "duur": "3 werkdagen",
+        "omschrijving": "Finale datacontrole, verwijdering van onbetrouwbare respondenten, oplevering complete dataset"
+      }
+    ],
+    "verwachte_startdatum": "Binnen 2 werkdagen na schriftelijk akkoord en ontvangst vragenlijst",
+    "verwachte_opleverdatum": "20 werkdagen na akkoord"
+  },
+  "kosten": {
+    "valuta": "EUR",
+    "eenmalige_kosten": [
+      {
+        "omschrijving": "Projectmanagement & coördinatie",
+        "bedrag": 950.00,
+        "toelichting": "Multi-country projectcoördinatie, dagelijkse rapportage, stakeholdercommunicatie"
+      },
+      {
+        "omschrijving": "Screeningprogrammering",
+        "bedrag": 450.00,
+        "toelichting": "Programmering screeningvragenlijst in 4 talen, routeringslogica, testprocedure"
+      },
+      {
+        "omschrijving": "Kwaliteitscontrole & rapportage",
+        "bedrag": 350.00,
+        "toelichting": "Handmatige controle open antwoorden, verificatie LinkedIn-profielen, eindrapportage"
+      }
+    ],
+    "variabele_kosten": [
+      {
+        "land": "Nederland",
+        "cpi": 72.00,
+        "incentive_per_respondent": 25.00,
+        "aantal_completes": 150,
+        "subtotaal": 14550.00
+      },
+      {
+        "land": "Duitsland",
+        "cpi": 72.00,
+        "incentive_per_respondent": 25.00,
+        "aantal_completes": 200,
+        "subtotaal": 19400.00
+      },
+      {
+        "land": "Frankrijk",
+        "cpi": 78.00,
+        "incentive_per_respondent": 25.00,
+        "aantal_completes": 150,
+        "subtotaal": 15450.00
+      },
+      {
+        "land": "Verenigd Koninkrijk",
+        "cpi": 72.00,
+        "incentive_per_respondent": 25.00,
+        "aantal_completes": 100,
+        "subtotaal": 9700.00
+      }
+    ],
+    "subtotaal_eenmalig": 1750.00,
+    "subtotaal_variabel": 59100.00,
+    "totaal_excl_btw": 60850.00,
+    "btw_percentage": 21,
+    "btw_bedrag": 12778.50,
+    "totaal_incl_btw": 73628.50,
+    "btw_opmerking": "BTW-behandeling afhankelijk van vestigingsland opdrachtgever. Bij intracommunautaire B2B-levering kan BTW verlegd worden (reverse charge). Bovenstaande BTW-berekening is indicatief op basis van Nederlands BTW-tarief."
+  },
+  "deliverables": [
+    "Gekwalificeerde respondenten die de online vragenlijst voltooien (600 completes totaal)",
+    "Dagelijkse voortgangsrapportage per land met aantallen starts, screenouts en completes",
+    "Tussentijdse kwaliteitsrapportage na 50% van de completes",
+    "Eindrapportage met overzicht incidence rate, dropout rate en respondentkwaliteit per land",
+    "Respondentendatabestand met anoniem ID, land, screeningantwoorden en invuldatum"
+  ],
+  "verantwoordelijkheden": {
+    "bureau": [
+      "Werving en screening van respondenten conform de afgesproken criteria",
+      "Programmering en hosting van de screeningvragenlijst",
+      "Dagelijkse monitoring en bijsturing van wervingscampagnes",
+      "Kwaliteitscontrole op alle geleverde respondenten",
+      "Proactieve communicatie over voortgang en eventuele knelpunten"
+    ],
+    "opdrachtgever": [
+      "Aanlevering van de definitieve vragenlijst inclusief surveylinks per land",
+      "Tijdige review en goedkeuring van de screeningvragenlijst",
+      "Beschikbaarheid voor vragen tijdens het veldwerk",
+      "Terugkoppeling over datakwaliteit binnen 2 werkdagen na oplevering"
+    ]
+  },
+  "kwaliteitsgaranties": [
+    "100% van de geleverde respondenten voldoet aan de afgesproken screeningcriteria",
+    "Respondenten die de kwaliteitscontrole niet doorstaan worden kosteloos vervangen",
+    "Bij onvoldoende respons in een specifiek land communiceren wij proactief binnen 48 uur over alternatieven",
+    "Alle respondentdata wordt verwerkt conform AVG/GDPR-richtlijnen"
+  ],
+  "voorwaarden": [
+    "Offerte is geldig tot 08-03-2026",
+    "Prijzen zijn gebaseerd op de beschreven doelgroep en screeningcriteria. Wijzigingen in criteria kunnen leiden tot prijsaanpassing",
+    "Betaling: 50% bij opdrachtverstrekking, 50% na oplevering. Betalingstermijn: 30 dagen",
+    "Annulering na start veldwerk: reeds gemaakte kosten worden in rekening gebracht met een minimum van 25% van de totale opdrachtsom",
+    "De doorlooptijd is een inschatting. Bij significant lagere incidence rate dan verwacht kan de doorlooptijd toenemen"
+  ],
+  "disclaimers": [
+    "De geschatte incidence rate is gebaseerd op onze ervaring met vergelijkbare projecten. De werkelijke IR kan afwijken en invloed hebben op doorlooptijd en kosten",
+    "Wij garanderen de kwaliteit van individuele respondenten, niet het bereiken van statistische significantie van de onderzoeksresultaten",
+    "Deze offerte is vertrouwelijk en uitsluitend bestemd voor de genoemde opdrachtgever"
+  ],
+  "aannames": [
+    "[AANNAME] LOI van 20 minuten: niet expliciet bevestigd door opdrachtgever, ingeschat op basis van de complexiteit van het onderzoeksonderwerp",
+    "[AANNAME] Incentive van €25 per respondent: gebaseerd op gangbare vergoeding voor B2B senior professionals bij een LOI van 20 minuten",
+    "[AANNAME] Quota op FMCG-categorie minimaal 20%: aangenomen op basis van de wens om alle subcategorieën vertegenwoordigd te hebben"
+  ]
+}

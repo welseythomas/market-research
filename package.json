@@ -1,0 +1,26 @@
+{
+  "name": "proposal-generator",
+  "version": "1.0.0",
+  "description": "Respondent Recruitment Proposal Generator - JSON to styled PDF",
+  "main": "src/generate-pdf.js",
+  "scripts": {
+    "start": "node server.js",
+    "generate": "node src/generate-pdf.js",
+    "example": "node src/generate-pdf.js examples/example-proposal.json"
+  },
+  "keywords": [
+    "proposal",
+    "pdf",
+    "market-research",
+    "recruitment"
+  ],
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.73.0",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "pdf-parse": "^2.4.5",
+    "pdfmake": "^0.2.10"
+  }
+}

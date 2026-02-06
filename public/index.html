@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proposal Generator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ─── STEP 1: Briefing Input ──────────────────────────────── -->
+  <div id="step-input" class="screen active">
+    <div class="input-container">
+      <div class="logo">
+        <div class="logo-mark"></div>
+        <h1>Proposal Generator</h1>
+        <p class="tagline">Plak een briefing, krijg een offerte</p>
+      </div>
+
+      <label class="textarea-label" for="briefing-text">Plak hieronder het transcript, de e-mail of gespreksnotities</label>
+      <textarea id="briefing-text" class="briefing-textarea" rows="16" placeholder="Plak hier de volledige briefing tekst...
+
+Bijvoorbeeld een telefoontranscript, e-mail van een klant, gespreksnotities, of een RFP. De AI analyseert de tekst en maakt automatisch een complete offerte."></textarea>
+
+      <div class="char-count" id="char-count">0 tekens</div>
+
+      <button class="btn btn-primary btn-large" id="btn-analyze" disabled>
+        <span class="btn-text">Offerte genereren</span>
+        <span class="btn-loading" style="display:none">
+          <span class="spinner"></span> Briefing wordt geanalyseerd...
+        </span>
+      </button>
+
+      <p class="error-msg" id="error-msg" style="display:none"></p>
+    </div>
+  </div>
+
+  <!-- ─── STEP 2: Review Proposal ─────────────────────────────── -->
+  <div id="step-review" class="screen">
+    <header class="review-header">
+      <div class="review-header-left">
+        <button class="btn btn-ghost" id="btn-back">&larr; Nieuwe briefing</button>
+        <h2>Offerte review</h2>
+      </div>
+      <div class="review-header-right">
+        <button class="btn btn-secondary" id="btn-download-json">JSON exporteren</button>
+        <button class="btn btn-primary" id="btn-download-pdf">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          PDF downloaden
+        </button>
+      </div>
+    </header>
+
+    <div class="review-body">
+      <div class="aannames-banner" id="aannames-banner" style="display:none">
+        <div class="banner-icon">!</div>
+        <div class="banner-content">
+          <strong>Aannames gemaakt</strong>
+          <p id="aannames-text"></p>
+          <ul id="aannames-list"></ul>
+        </div>
+      </div>
+
+      <div class="facts-grid" id="facts-grid"></div>
+      <div class="sections" id="review-sections"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
